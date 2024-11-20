@@ -1,20 +1,21 @@
+const fetch = require('node-fetch'); // 确保引入正确
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 处理 POST 请求
 app.post('/api/server', async (req, res) => {
-    const { url } = req.body;
-
-    if (!url) {
-        return res.status(400).send({ error: "URL is required" });
-    }
-
     try {
+        const { url } = req.body;
+        if (!url) {
+            return res.status(400).json({ error: "Missing 'url' in request body" });
+        }
+
         const formData = new URLSearchParams();
         formData.append('url', url);
         formData.append('submitBtn', 'submit');
@@ -26,15 +27,11 @@ app.post('/api/server', async (req, res) => {
         });
 
         const html = await response.text();
-        res.send(html); // 返回 HTML 给前端解析
+        res.status(200).send(html); // 返回 HTML
     } catch (error) {
-        res.status(500).send({ error: error.message });
+        res.status(500).json({ error: error.message }); // 捕获并返回错误
     }
 });
 
-// Start server (for local development)
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(3000, () => console.log('Server running on port 3000'));
-}
-
-module.exports = app; // For Vercel
+// 导出模块（供 Vercel 使用）
+module.exports = app;
