@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Video Extractor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        video {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Twitter Video Extractor</h1>
+    <p>Enter the URL of a Twitter post containing a video:</p>
+    <input type="text" id="tweetUrl" placeholder="Enter Tweet URL">
+    <button onclick="fetchVideo()">Fetch Video</button>
+    <div class="output" id="output"></div>
+
+    <script>
+        async function fetchVideo() {
+            const tweetUrl = document.getElementById('tweetUrl').value;
+            if (!tweetUrl) {
+                alert("Please enter a valid Tweet URL!");
+                return;
+            }
+
+            // 后端代理服务地址
+            const apiUrl = "https://nextjs-boilerplate-7-gules-37.vercel.app/api/server";
+
+            try {
+                // 向后端发送 POST 请求
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: tweetUrl }) // 将推文 URL 传递给后端
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch data from the server");
+                }
+
+                const html = await response.text(); // 获取后端返回的 HTML
+                const videoUrl = extractVideoUrl(html);
+
+                if (videoUrl) {
+                    displayVideo(videoUrl);
+                } else {
+                    throw new Error("Video URL not found in the response!");
+                }
+            } catch (error) {
+                document.getElementById('output').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+
+        // 解析 HTML 中的视频链接
+        function extractVideoUrl(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const videoElement = doc.querySelector('.video_box video');
+            return videoElement ? videoElement.getAttribute('src') : null;
+        }
+
+        // 显示视频
+        function displayVideo(videoUrl) {
+            document.getElementById('output').innerHTML = `
+                <p>Video URL: <a href="${videoUrl}" target="_blank">${videoUrl}</a></p>
+                <video controls src="${videoUrl}"></video>
+            `;
+        }
+    </script>
+</body>
+</html>
